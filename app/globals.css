@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root { color-scheme: light; }
+  body { @apply bg-zinc-50 text-zinc-900; }
+  ::selection { @apply bg-violet-200; }
+  /* Default link styling (do NOT affect buttons/pills that are also <a>) */
+  a:not(.ui-btn-primary):not(.ui-btn-outline):not(.ui-btn-outline-violet):not(.ui-btn-danger-outline):not(.ui-btn-soft):not(.ui-pill):not(.ui-pill-active) {
+    @apply text-violet-700 hover:text-violet-800;
+  }
+}
+
+@layer components {
+  .ui-card { @apply rounded-3xl border bg-white shadow-sm; }
+  /* Inputs */
+  .ui-input { @apply w-full rounded-xl border px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-violet-200; }
+
+  /* Buttons: keep the same "Avtomobil / Ümumi elan" feel (border + solid) */
+  .ui-btn-primary {
+    @apply rounded-xl border border-violet-700 bg-violet-700 text-white shadow-sm
+    hover:bg-violet-800 hover:border-violet-800
+    active:bg-violet-800 active:border-violet-800
+    transition-colors
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300
+    disabled:opacity-60;
+  }
+  .ui-btn-outline {
+    @apply rounded-xl border bg-white text-zinc-800 shadow-sm
+    hover:bg-zinc-50 active:bg-zinc-100
+    transition-colors
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-200
+    disabled:opacity-60;
+  }
+  .ui-btn-outline-violet {
+    @apply rounded-xl border border-violet-200 bg-white text-violet-700 shadow-sm
+    hover:bg-violet-50 active:bg-violet-100
+    transition-colors
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200
+    disabled:opacity-60;
+  }
+  .ui-btn-danger-outline {
+    @apply rounded-xl border border-red-200 bg-white text-red-600 shadow-sm
+    hover:bg-red-50 active:bg-red-100
+    transition-colors
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200
+    disabled:opacity-60;
+  }
+  .ui-btn-soft { @apply rounded-xl bg-violet-50 text-violet-700 hover:bg-violet-100 active:bg-violet-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200; }
+  .ui-btn-success {
+    @apply rounded-xl border border-emerald-600 bg-emerald-600 text-white shadow-sm
+    hover:bg-emerald-700 hover:border-emerald-700
+    active:bg-emerald-700 active:border-emerald-700
+    transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300
+    disabled:opacity-60;
+  }
+  .ui-btn-danger {
+    @apply rounded-xl border border-rose-600 bg-rose-600 text-white shadow-sm
+    hover:bg-rose-700 hover:border-rose-700
+    active:bg-rose-700 active:border-rose-700
+    transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300
+    disabled:opacity-60;
+  }
+
+  /* Pills / tabs */
+  .ui-pill { @apply inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm hover:bg-zinc-50 transition-colors; }
+  .ui-pill-active { @apply bg-violet-700 text-white border-violet-700 hover:bg-violet-800 active:bg-violet-800; }
+  .ui-chip { @apply inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 text-sm text-zinc-700 shadow-sm; }
+}
+
+/* Remove iOS/Android tap highlight (fixes "weird" click color) */
+button, a { -webkit-tap-highlight-color: transparent; }
+button { appearance: none; }
+
+/* iOS safe-area for bottom navigation */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }

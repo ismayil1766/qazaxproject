@@ -1,0 +1,41 @@
+Bu versiyada istifadəçi OTP/email təsdiqi çıxarılıb və şifrə bərpası admin sorğusu kimi işləyir.
+
+Nə dəyişdi:
+- Qeydiyyat: telefon + şifrə ilə birbaşa hesab açılır.
+- Giriş: telefon və ya email + şifrə ilə birbaşa daxil olunur.
+- İstifadəçi üçün OTP endpoint-ləri deaktivdir.
+- Şifrə bərpası səhifəsi artıq adminə sorğu göndərir.
+- Admin paneldə yeni "Şifrə bərpa" bölməsi var.
+- Admin yeni şifrə yazıb sorğunu bağlaya bilər.
+- Şifrə yenilənəndə istifadəçinin bütün sessiyaları bağlanır.
+- Elan yaratmada sadə anti-spam limitləri qalır.
+
+Vacib deploy qeydləri:
+- Prisma schema dəyişib. Deploy-dan əvvəl bunları işlət:
+  1) npm install
+  2) npx prisma generate
+  3) npx prisma db push
+  4) npm run build
+- Yeni model: PasswordResetRequest
+- Mövcud istifadəçilər işləyəcək.
+- Yeni istifadəçilər üçün email məcburi deyil; sistem daxili email yaradır.
+
+
+Əlavə qoruma qatları:
+- Login üçün həm IP, həm də hesab/nömrə üzrə throttling var.
+- Qeydiyyat üçün həm IP, həm də telefon nömrəsi üzrə limit var.
+- Şifrə bərpası sorğuları həm IP, həm də nömrə üzrə limitlənir.
+- Bütün /api POST sorğuları middleware ilə same-origin yoxlamasından keçir.
+- Elan yaratmada IP və user limitləri, duplicate yoxlaması və pending limit qalır.
+
+Build fix (2026-03-07): removed committed tsconfig.tsbuildinfo because Railway/Nixpacks cache mount treats that path as a directory target during build.
+
+
+2026-03-07 live hardening:
+- VIP/Premium user request button-ları və API default olaraq deaktiv edildi (`PROMOTION_REQUESTS_ENABLED=0`).
+- Admin legacy `?key=ADMIN_KEY` fallback default olaraq söndürüldü (`ALLOW_ADMIN_KEY_FALLBACK=0`).
+- Redirect helper yalnız same-origin internal redirect-lərə icazə verir.
+- Xarici remote image host-ları bağlandı; listing şəkilləri yalnız local `/media` və `/uploads` yolundan qəbul olunur.
+- Upload route zədələnmiş/non-image faylları və həddən artıq şəkil sayını daha sərt rədd edir.
+- Production-da mail provider yoxdursa konsol OTP fallback explicit env olmadan istifadə olunmur.
+- Committed `tsconfig.tsbuildinfo` silinməlidir.

@@ -1,0 +1,17 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "openssl"]
+
+[phases.install]
+# NOTE: We intentionally use `npm install` instead of `npm ci` because
+# the repository doesn't include a package-lock.json. `npm ci` fails
+# without a lockfile.
+cmds = ["npm install --include=dev --no-audit --no-fund"]
+
+[phases.build]
+cmds = [
+  "npm run build",
+  "bash scripts/railway_build.sh"
+]
+
+[start]
+cmd = "bash scripts/railway_start.sh"

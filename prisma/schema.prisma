@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  lastName     String?
+  email        String   @unique
+  phone        String?
+  avatarUrl    String?
+  // "USER" / "ADMIN"
+  role         String   @default("USER")
+  emailVerified Boolean @default(false)
+  passwordHash String
+  isBlocked    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  sessions     Session[]
+  otps         EmailOtp[]
+  listings     Listing[]
+  favorites    Favorite[]
+  notifications Notification[]
+  passwordResetRequests PasswordResetRequest[]
+  promotionRequests ListingPromotionRequest[]
+}
+
+model EmailOtp {
+  id        String   @id @default(cuid())
+  email     String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  // SQLite connector in Prisma does not support enums; use String values like
+  // "LOGIN" / "VERIFY_EMAIL".
+  purpose   String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([email, purpose, expiresAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model Category {
+  id         String    @id @default(cuid())
+  slug       String    @unique
+  nameAz     String
+  parentId   String?
+  parent     Category? @relation("CategoryTree", fields: [parentId], references: [id])
+  children   Category[] @relation("CategoryTree")
+  listings   Listing[]
+  createdAt  DateTime  @default(now())
+}
+
+model Listing {
+  id           String        @id @default(cuid())
+  // SQLite connector in Prisma does not support enums; use String values like
+  // "VEHICLE" / "GENERAL".
+  type         String
+  title        String
+  description  String
+  price        Int?
+  currency     String        @default("AZN")
+  city         String
+  district     String?
+  // SQLite connector in Prisma does not support Json; store JSON as a string.
+  // In app code we parse/stringify this field.
+  images       String        @default("[]")
+  contactName  String
+  phone        String
+  whatsapp     String?
+  // "PENDING" / "ACTIVE" / "REJECTED" / "ARCHIVED"
+  status       String        @default("PENDING")
+  rejectReason String?
+  // Store flags JSON as string, e.g. {"vip":true,"urgent":false}
+  flags        String        @default("{}")
+
+  // VIP aktivləşdiriləndə avtomatik tarix verilir (məs: 7 gün).
+  // Vaxtı keçəndə UI-də VIP göstərilmir.
+  vipUntil     DateTime?
+
+  // Premium da müddətli saxlanılır. Vaxt bitəndə UI-də göstərilmir.
+  premiumUntil DateTime?
+
+  categoryId   String
+  category     Category      @relation(fields: [categoryId], references: [id])
+
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  favorites    Favorite[]
+  promotionRequests ListingPromotionRequest[]
+
+  vehicle      VehicleDetails?
+  realEstate   RealEstateDetails?
+  // Phone listing extra specs (NOT the contact phone string above)
+  phoneDetails PhoneDetails?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  expiresAt    DateTime?
+
+  @@index([type, status, createdAt])
+  @@index([city, status, createdAt])
+  @@index([categoryId, status, createdAt])
+  @@index([userId, status, createdAt])
+}
+
+model RealEstateDetails {
+  id           String  @id @default(cuid())
+  listingId    String  @unique
+  listing      Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  // Minimal fields for filters like Turbo.az style
+  propertyType String?
+  rooms        Int?
+  areaM2       Int?
+  floor        Int?
+  totalFloors  Int?
+}
+
+model PhoneDetails {
+  id        String   @id @default(cuid())
+  listingId String   @unique
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  brand   String
+  model   String
+  storageGb Int?
+  condition String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brand])
+  @@index([model])
+}
+
+
+model VehicleDetails {
+  id            String @id @default(cuid())
+  listingId     String @unique
+  listing       Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  make          String
+  model         String
+  year          Int
+  mileageKm     Int?
+  engine        String?
+  fuel          String?
+  transmission  String?
+  bodyType      String?
+  color         String?
+  vin           String?
+  barter        Boolean @default(false)
+  credit        Boolean @default(false)
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+  @@index([userId, createdAt])
+  @@index([listingId, createdAt])
+}
+
+model PasswordResetRequest {
+  id         String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  phone       String
+  note        String?
+  status      String   @default("PENDING")
+  requestedAt DateTime @default(now())
+  resolvedAt  DateTime?
+  resolvedBy  String?
+
+  @@index([status, requestedAt])
+  @@index([phone, requestedAt])
+  @@index([userId, requestedAt])
+}
+
+
+model ListingPromotionRequest {
+  id            String   @id @default(cuid())
+  listingId      String
+  listing        Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // "VIP" / "PREMIUM"
+  kind           String
+  planDays       Int      @default(7)
+  price          Int?
+  currency       String   @default("AZN")
+
+  // "PENDING" / "APPROVED" / "REJECTED" / "CANCELED"
+  status         String   @default("PENDING")
+  // "UNPAID" / "PAID" / "WAIVED"
+  paymentStatus  String   @default("UNPAID")
+  paymentMethod  String?
+
+  applicantNote  String?
+  adminNote      String?
+
+  requestedAt    DateTime @default(now())
+  reviewedAt     DateTime?
+  reviewedBy     String?
+  startsAt       DateTime?
+  endsAt         DateTime?
+
+  @@index([listingId, status, requestedAt])
+  @@index([userId, status, requestedAt])
+  @@index([kind, status, requestedAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String?
+  href      String?
+  // "LISTING" / "SECURITY" / "SYSTEM"
+  kind      String   @default("SYSTEM")
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, readAt, createdAt])
+}
+
+// NOTE: Enums are intentionally removed for SQLite compatibility.
+
+
+model AdminMfa {
+  id                 Int      @id
+  email              String
+  mfaEnabled         Boolean  @default(false)
+  totpSecretEnc      String?
+  totpSetupViewedAt  DateTime?
+  totpConfirmedAt    DateTime?
+  // JSON array of bcrypt hashes for recovery codes
+  recoveryCodesHash  String   @default("[]")
+  recoveryCodesCreatedAt DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
